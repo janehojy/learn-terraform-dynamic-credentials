@@ -52,9 +52,7 @@ resource "aws_iam_policy" "tfc_policy" {
  "Statement": [
    {
      "Effect": "Allow",
-     "Action": [
-       "ec2:*"
-     ],
+     "Action": "*"
      "Resource": "*"
    }
  ]
