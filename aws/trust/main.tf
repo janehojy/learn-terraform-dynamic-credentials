@@ -64,3 +64,55 @@ resource "aws_iam_role_policy_attachment" "tfc_policy_attachment" {
   role       = aws_iam_role.tfc_role.name
   policy_arn = aws_iam_policy.tfc_policy.arn
 }
+
+##### Create iam role for plan
+
+resource "aws_iam_role" "tfc_plan_role" {
+  name = "tfc-plan-role"
+
+  assume_role_policy = <<EOF
+{
+ "Version": "2012-10-17",
+ "Statement": [
+   {
+     "Effect": "Allow",
+     "Principal": {
+       "Federated": "${aws_iam_openid_connect_provider.tfc_provider.arn}"
+     },
+     "Action": "sts:AssumeRoleWithWebIdentity",
+     "Condition": {
+       "StringEquals": {
+         "${var.tfc_hostname}:aud": "${one(aws_iam_openid_connect_provider.tfc_provider.client_id_list)}"
+       },
+       "StringLike": {
+         "${var.tfc_hostname}:sub": "organization:${var.tfc_organization_name}:project:${var.tfc_project_name}:workspace:${var.tfc_workspace_name}:run_phase:*"
+       }
+     }
+   }
+ ]
+}
+EOF
+}
+
+resource "aws_iam_policy" "tfc_plan_policy" {
+  name        = "tfc-plan-policy"
+  description = "TFC run policy"
+
+  policy = <<EOF
+{
+ "Version": "2012-10-17",
+ "Statement": [
+   {
+     "Effect": "Allow",
+     "Action": "read",
+     "Resource": "*"
+   }
+ ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "tfc_policy_attachment" {
+  role       = aws_iam_role.tfc_plan_role.name
+  policy_arn = aws_iam_policy.tfc_plan_policy.arn
+}
